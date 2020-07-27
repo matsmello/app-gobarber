@@ -25,6 +25,7 @@ import { Form } from "@unform/mobile";
 import { FormHandles } from "@unform/core";
 import * as Yup from "yup";
 import getValidationErrors from "./../../utils/getValidationsErrors";
+import { useAuth } from "../../hooks/auth";
 interface SignInFormData {
   email: "string";
   password: "string;";
@@ -34,39 +35,39 @@ const SignIn: React.FC = () => {
   const navigation = useNavigation();
   const formRef = useRef<FormHandles>(null);
   const passwordInputRef = useRef<TextInput>(null);
+  const { signIn } = useAuth();
 
-  const handleSignIn = useCallback(async (data: SignInFormData): Promise<
-    void
-  > => {
-    try {
-      formRef.current?.setErrors({});
-      const schema = Yup.object({
-        email: Yup.string()
-          .required("E-mail obrigatório")
-          .email("Digite um e-mail válido"),
-        password: Yup.string().required("Senha obrigatória"),
-      });
+  const handleSignIn = useCallback(
+    async (data: SignInFormData): Promise<void> => {
+      try {
+        formRef.current?.setErrors({});
+        const schema = Yup.object({
+          email: Yup.string()
+            .required("E-mail obrigatório")
+            .email("Digite um e-mail válido"),
+          password: Yup.string().required("Senha obrigatória"),
+        });
 
-      await schema.validate(data, {
-        abortEarly: false,
-      });
+        await schema.validate(data, {
+          abortEarly: false,
+        });
 
-      // await signIn({
-      //   email: data.email,
-      //   password: data.password,
-      // });
+        await signIn({
+          email: data.email,
+          password: data.password,
+        });
+      } catch (err) {
+        if (err instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(err);
+          formRef.current?.setErrors(errors);
 
-      // history.push("/dashboard");
-    } catch (err) {
-      if (err instanceof Yup.ValidationError) {
-        const errors = getValidationErrors(err);
-        formRef.current?.setErrors(errors);
-
-        return;
+          return;
+        }
+        Alert.alert("Erro", "Ocorreu um erro na autenticação.");
       }
-      Alert.alert("Erro", "Ocorreu um erro na autenticação.");
-    }
-  }, []);
+    },
+    [signIn]
+  );
 
   return (
     <>
